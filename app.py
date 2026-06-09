@@ -1,6 +1,9 @@
 import requests, random, io, json
 import matplotlib.pyplot as plt
 from flask import Flask, send_file, jsonify
+import matplotlib.colors as mcolors
+import matplotlib.patches as patches
+import numpy as np
 
 API = "https://pokeapi.co/api/v2"
 app = Flask(__name__)
@@ -29,46 +32,162 @@ def fetch_pokemon(poke_id):
     }
     return data
 
-CANONICAL_ORDER = ['speed','special-defense', 'special-attack','defense','attack','hp']
-def stats_bar_png(stats_dict, order=CANONICAL_ORDER, gap_frac=0.05, figsize=(6,3), dpi=100):
-    # 1. Build ordered names and values
+CANONICAL_ORDER = ['hp','attack','defense','special-attack','special-defense', 'speed',]  
+def stats_bar_png(
+    stats_dict,
+    order=CANONICAL_ORDER,
+    # Fractions of the 0..255 width used for layout (tweak to taste)
+    name_col_frac=0.18,        # width reserved for the stat name column
+    value_col_frac=0.08,       # width reserved for the stat value column
+    name_value_gap_frac=0.02,  # extra gap between name and value columns
+    value_bar_gap_frac=0.02,   # gap between value column and where bars start
+    figsize=(6, 3),
+    dpi=100
+):
+    """
+    Draw horizontal stat bars on a fixed 0..255 scale.
+    - Each stat has a filled faint rectangle (color) that extends to 255.
+    - Left columns: Name (with semicolon) and Value (both black).
+    - Bars start after the value column + a small gap.
+    - Abbreviates special-attack/defense to Sp. Atk / Sp. Def.
+    """
+
+    # --- Prepare names and values (ordered) ---
     names = [n for n in order if n in stats_dict] or list(stats_dict.keys())
-    vals = [stats_dict[n] for n in names]
+    vals = [int(stats_dict.get(n, 0)) for n in names]
+    vals = [max(0, min(255, v)) for v in vals]  # clamp to 0..255
 
-    # 2. Compute a gap (absolute value) to offset where bars start
-    max_val = max(vals) if vals else 0
-    gap = max_val * gap_frac if max_val > 0 else 1  # gap in same units as stats
+    # --- Colors per stat ---
+    colors = {
+        'hp': '#FF5959',
+        'attack': '#F5AC78',
+        'defense': '#FAE078',
+        'special-attack': '#9DB7F5',
+        'special-defense': '#A7DB8D',
+        'speed': '#FA92B2'
+    }
 
-    # 3. Create figure and axes
+    # --- Fixed chart maximum (data units) ---
+    rect_width = 255.0
+
+    # --- Compute column widths in data units ---
+    name_col_w = rect_width * float(name_col_frac)
+    value_col_w = rect_width * float(value_col_frac)
+    # gap between name and value columns (data units)
+    name_value_gap = rect_width * float(name_value_gap_frac)
+    # gap between value column and bar start (data units)
+    value_bar_gap = rect_width * float(value_bar_gap_frac)
+
+    # Where bars start (data units)
+    bar_left = name_col_w + name_value_gap + value_col_w + value_bar_gap
+    available_bar_width = rect_width - bar_left
+    if available_bar_width <= 0:
+        # fallback to ensure positive width
+        bar_left = rect_width * 0.35
+        available_bar_width = rect_width - bar_left
+
+    n = len(names)
+    y_pos = np.arange(n)
+    bar_height = 0.6
+
+    # --- Create figure and axes ---
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
 
-    #    This makes a visible empty space between the left edge (labels/numbers) and the bar.
-    ax.barh(names, vals, left=gap, color='tab:blue', height=0.6)
+    # Draw filled full-width rectangles first (so bars sit on top)
+    for i, raw_name in enumerate(names):
+        key = raw_name.lower()
 
-    # 5. Put the numeric value to the left of the bar (right-aligned)
-    #    We place the text at x = gap * 0.9 (slightly left of the bar start).
-    text_x = gap * 0.9 if gap > 0 else 0
-    for y, v in zip(names, vals):
-        ax.text(text_x, y, str(v), ha='right', va='center', fontsize=10, color='black')
+        # Abbreviate special stats
+        if key == 'special-attack':
+            disp_name = 'Sp. Atk'
+        elif key == 'special-defense':
+            disp_name = 'Sp. Def'
+        else:
+            # remove hyphens and title-case other names
+            disp_name = raw_name.replace('-', ' ').title()
 
-    # 6. Remove x-axis ticks and labels and hide spines so the x-axis is invisible
+        base_color = colors.get(key, '#888888')
+
+        # faint fill color for the full-width rectangle (alpha controls faintness)
+        rect_face = mcolors.to_rgba(base_color, alpha=0.12)
+        rect_edge = mcolors.to_rgba(base_color, alpha=0.22)
+
+        # Rectangle spans from x=0 to rect_width and centered on the y position
+        rect = patches.Rectangle(
+            (0, y_pos[i] - bar_height/2),
+            rect_width,
+            bar_height,
+            linewidth=1.2,
+            edgecolor=rect_edge,
+            facecolor=rect_face,   # **filled** with faint color
+            zorder=1,
+            joinstyle='round'
+        )
+        ax.add_patch(rect)
+
+        # Compute bar length proportional to 0..255 scale
+        # (value maps directly to data units on the 0..255 scale)
+        bar_len = (vals[i] / 255.0) * available_bar_width
+
+        # Draw the filled bar on top, starting at bar_left
+        ax.barh(y_pos[i], bar_len, left=bar_left, color=base_color,
+                height=bar_height * 0.9, zorder=2)
+
+        # Compose label pieces
+        # Semicolon after the name as requested
+        name_text = f"{disp_name}:"
+        value_text = f"{vals[i]}"
+
+        # Place name in the name column (left-aligned), black text
+        name_x = name_col_w * 0.02  # small inset inside name column (data units)
+        ax.text(
+            name_x,
+            y_pos[i],
+            name_text,
+            ha='left',
+            va='center',
+            fontsize=10,
+            color='black',   # **black text**
+            zorder=3,
+            weight='semibold'
+        )
+
+        # Place value in the value column (right-aligned), black text
+        value_x = name_col_w + name_value_gap + value_col_w * 0.98
+        ax.text(
+            value_x,
+            y_pos[i],
+            value_text,
+            ha='right',
+            va='center',
+            fontsize=10,
+            color='black',   # **black text**
+            zorder=3,
+            weight='semibold'
+        )
+
+    # --- Remove ticks, ticklines and spines so no stray dashes appear on the left ---
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels([])            # hide default y labels (we draw our own)
     ax.xaxis.set_visible(False)
+    ax.tick_params(axis='y', which='both', length=0)  # remove tick marks
     for spine in ('top', 'right', 'bottom', 'left'):
         ax.spines[spine].set_visible(False)
 
-    # 7. Optionally invert y so highest item appears at top (common for stat lists)
+    # Invert y so first stat is at top
     ax.invert_yaxis()
+    
 
-    # 8. Adjust left margin so stat names and numbers have room
-    #    Increase left margin if numbers or names are long.
-    plt.subplots_adjust(left=0.30)
+    # Set limits so rectangles and bars are fully visible
+    ax.set_xlim(0, rect_width)
+    ax.set_ylim(-0.5, n - 0.5)
 
-    # 9. Set x limits so bars are fully visible (bars start at gap and extend to gap + max_val)
-    ax.set_xlim(0, gap + max_val * 1.05)
+    # Adjust margins so left columns aren't clipped
+    plt.subplots_adjust(left=0.06, right=0.98, top=0.98, bottom=0.02)
 
-    # 10. Finalize and return PNG buffer
+    # Save to PNG buffer
     buf = io.BytesIO()
-    fig.savefig(buf, format='png', bbox_inches='tight')
+    fig.savefig(buf, format='png', bbox_inches='tight', dpi=dpi)
     buf.seek(0)
     plt.close(fig)
     return buf
