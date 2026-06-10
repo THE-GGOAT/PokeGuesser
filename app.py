@@ -1,9 +1,11 @@
 import requests, random, io, json
 import matplotlib.pyplot as plt
-from flask import Flask, send_file, jsonify
+from flask import Flask, render_template, send_file, jsonify
 import matplotlib.colors as mcolors
 import matplotlib.patches as patches
 import numpy as np
+from flask import Flask
+
 
 API = "https://pokeapi.co/api/v2"
 app = Flask(__name__)
@@ -204,6 +206,9 @@ def random_chart():
     img = stats_bar_png(data['stats'])
     return send_file(img, mimetype='image/png')
 
+@app.route("/")
+def index():
+    return render_template("index.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
