@@ -87,7 +87,7 @@ def stats_bar_png(
         available_bar_width = rect_width - bar_left
 
     n = len(names)
-    y_pos = np.arange(n)
+    y_pos = np.arange(n)[::-1]
     bar_height = 0.6
 
     # --- Create figure and axes ---
@@ -174,8 +174,7 @@ def stats_bar_png(
     for spine in ('top', 'right', 'bottom', 'left'):
         ax.spines[spine].set_visible(False)
 
-    # Invert y so first stat is at top
-    ax.invert_yaxis()
+    
     
 
     # Set limits so rectangles and bars are fully visible
