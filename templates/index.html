@@ -156,20 +156,20 @@
       submitBtn.disabled = true;
       const missing = [];
       if (nameInput.value.trim() === '') missing.push('Name');
-      setMessage('Please fill out required fields: ' + missing.join(', '), 'danger');
+    
       return;
     }
 
     // if name is filled but we haven't confirmed existence yet
     if (!pokemonExists) {
       submitBtn.disabled = true;
-      setMessage('Pokemon not found. Check the name or wait for the verification spinner to finish.', 'danger');
+      
       return;
     }
 
     // all good
     submitBtn.disabled = false;
-    setMessage('All good — you can submit the form.', 'success');
+  
   }
 
   // check pokemon existence via PokeAPI and autofill types when found
@@ -187,7 +187,7 @@
     checking = true;
     pokemonExists = false;
     showSpinner(true);
-    setMessage('Checking Pokémon name...', 'info');
+   
 
     try {
       const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${encodeURIComponent(normalized)}`, { method: 'GET' });
@@ -225,7 +225,7 @@
       pokemonExists = false;
       checking = false;
       showSpinner(false);
-      setMessage('Network error while checking Pokémon name. Please check your connection and try again.', 'danger');
+      setMessage('Network error. Please check your connection and try again.', 'danger');
       updateSubmitState();
     }
   }
@@ -338,7 +338,7 @@
     // set checking state and show spinner immediately so user sees feedback
     checking = true;
     showSpinner(true);
-    setMessage('Waiting to check Pokémon name...', 'info');
+    
     updateSubmitState();
 
     // schedule both suggestion display and the API existence check after debounce
