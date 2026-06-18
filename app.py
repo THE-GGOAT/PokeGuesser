@@ -1,6 +1,6 @@
 import requests, random, io, json
 import matplotlib.pyplot as plt
-from flask import Flask, render_template, send_file, jsonify
+from flask import Flask, render_template, send_file, jsonify, request
 import matplotlib.colors as mcolors
 import matplotlib.patches as patches
 import numpy as np
@@ -200,15 +200,18 @@ def random_pokemon():
     return jsonify(data)
 
 @app.route("/random/chart")
-def random_chart():
-    poke_id = random.randint(1, 1010)
+def random_chart(poke_id):
     data = fetch_pokemon(poke_id)
     img = stats_bar_png(data['stats'])
     return send_file(img, mimetype='image/png')
 
-@app.route("/")
+@app.route("/", methods=['GET', 'POST'])
 def index():
-    return render_template("index.html")
+    poke_id = random.randint(1, 1010)
+    random_chart(poke_id)
+    if request.method == 'POST':
+        data = fetch_pokemon(poke_id)
+        return render_template("index.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
@@ -216,3 +219,7 @@ if __name__ == "__main__":
 #randomly genrete a pokemon a pull data from the api https://pokeapi.co/api/v2/
 #use the stat values of the randomly generated pokemon from the api and display them as a horizontal bar chart
 #store the values of generation, type1, type2 (if it exists), heaight, weight, ability1, Ability2 (if it exists), Hidden_ability
+
+
+#what needs to be done
+# the user inputted pokemon will have to be converted back into an id most likely in order for it to work with the api
