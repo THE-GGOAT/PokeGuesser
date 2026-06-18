@@ -1,14 +1,22 @@
 import requests, random, io, json
 import matplotlib.pyplot as plt
-from flask import Flask, render_template, send_file, jsonify, request
+from flask import Flask, render_template, send_file, jsonify, request, session
 import matplotlib.colors as mcolors
 import matplotlib.patches as patches
 import numpy as np
-from flask import Flask
+import os
+import secrets
+
 
 
 API = "https://pokeapi.co/api/v2"
 app = Flask(__name__)
+
+def generate_id():
+    if "poke_id" not in session:
+        session["poke_id"] = random.randint(1, 1010) # adjust upper bound as needed
+    return session["poke_id"]
+app.jinja_env.globals["poke_id"] = generate_id
 
 def fetch_pokemon(poke_id):
     p = requests.get(f"{API}/pokemon/{poke_id}").json()
@@ -193,25 +201,33 @@ def stats_bar_png(
     plt.close(fig)
     return buf
 
+app.secret_key = os.environ.get("FLASK_SECRET") or secrets.token_urlsafe(32)
+
+@app.before_request
+def ensure_poke_id():
+    if "poke_id" not in session:
+        session["poke_id"] = random.randint(1, 1010)
+
 @app.route("/random")
 def random_pokemon():
-    poke_id = random.randint(1, 1010)  # adjust upper bound as needed
+    poke_id = session.get("poke_id")
     data = fetch_pokemon(poke_id)
     return jsonify(data)
 
 @app.route("/random/chart")
-def random_chart(poke_id):
+def random_chart():
+    poke_id = session.get("poke_id")
     data = fetch_pokemon(poke_id)
     img = stats_bar_png(data['stats'])
     return send_file(img, mimetype='image/png')
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
-    poke_id = random.randint(1, 1010)
-    random_chart(poke_id)
+    poke_id = session.get("poke_id")
     if request.method == 'POST':
         data = fetch_pokemon(poke_id)
-        return render_template("index.html")
+        return render_template("index.html", pokemon=data, poke_id=poke_id)
+    return render_template("index.html", poke_id=poke_id)
 
 if __name__ == "__main__":
     app.run(debug=True)
