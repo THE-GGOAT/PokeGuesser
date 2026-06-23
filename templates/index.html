@@ -150,7 +150,8 @@
       submitBtn.disabled = true;
       return;
     }
-
+    // initial validation on load
+     updateSubmitState();
     // required fields must be filled and pokemon must exist
     if (!requiredFieldsFilled()) {
       submitBtn.disabled = true;
@@ -217,7 +218,7 @@
         checking = false;
         showSpinner(false);
 
-        setMessage('Error checking Pokémon name (server returned ' + res.status + ').', 'danger');
+
         updateSubmitState();
       }
     } catch (err) {
@@ -395,8 +396,7 @@
 
 })();
 
-  // initial validation on load
-  updateSubmitState();
+  
 
   // prevent form submission if disabled (extra safety)
   document.getElementById('itemForm').addEventListener('submit', function (e) {
@@ -413,6 +413,50 @@
     nameSpinner.setAttribute('aria-hidden', nameSpinner.style.display === 'none' ? 'true' : 'false');
   });
   observer.observe(nameSpinner, { attributes: true, attributeFilter: ['style'] });
+
+  const form = document.getElementById('itemForm');
+const nameInput = document.getElementById('name');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = nameInput.value.trim();
+  if (!name) return;
+
+  const fd = new FormData();
+  fd.append('name', name);
+
+  try {
+    const resp = await fetch('/', {
+      method: 'POST',
+      body: fd,
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!resp.ok) {
+      setMessage('Server error. Try again.', 'danger');
+      return;
+    }
+
+    const json = await resp.json();
+    if (!json.ok) {
+      setMessage('Server error. Try again.', 'danger');
+      return;
+    }
+
+    if (!json.exists) {
+      setMessage('Pokémon not found.', 'warning');
+      return;
+    }
+
+    if (json.match) {
+      setMessage('Correct! You guessed the Pokémon.', 'success');
+    } else {
+      setMessage('Incorrect guess. Try again.', 'danger');
+    }
+  } catch (err) {
+    setMessage('Network error. Please try again.', 'danger');
+  }
+  });
 
 </script>
 

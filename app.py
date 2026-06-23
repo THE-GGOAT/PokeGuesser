@@ -203,6 +203,19 @@ def stats_bar_png(
 
 app.secret_key = os.environ.get("FLASK_SECRET") or secrets.token_urlsafe(32)
 
+def resolve_name_to_id(name):
+    if not name:
+        return None
+    normalized = name.strip().lower()
+    try:
+        res = requests.get(f"{API}/pokemon/{requests.utils.requote_uri(normalized)}", timeout=5)
+        if res.status_code == 404:
+            return None
+        res.raise_for_status()
+        return int(res.json().get("id"))
+    except requests.RequestException:
+        return None
+    
 @app.before_request
 def ensure_poke_id():
     if "poke_id" not in session:
@@ -224,10 +237,31 @@ def random_chart():
 @app.route("/", methods=['GET', 'POST'])
 def index():
     poke_id = session.get("poke_id")
-    if request.method == 'POST':
-        data = fetch_pokemon(poke_id)
-        return render_template("index.html", pokemon=data, poke_id=poke_id)
-    return render_template("index.html", poke_id=poke_id)
+    if request.method == 'GET':
+        return render_template("index.html", poke_id=poke_id)
+    
+    #POST: authoritative check
+    name = request.form.get("name", "").strip()
+    guessed_id = resolve_name_to_id(name)
+    if guessed_id is None:
+        payload = {"ok": True, "exists": False}
+    else:
+        payload = {
+            "ok": True,
+            "exists": True,
+            "guessed_id": guessed_id,
+            "actual_id": poke_id,
+            "match": guessed_id == poke_id
+        }
+
+    # If client expects JSON (AJAX), return JSON; otherwise render template
+    if request.headers.get("Accept") == "application/json" or request.is_json:
+        return jsonify(payload)
+
+    # fallback for non-AJAX form submit (optional)
+    return render_template("index.html", poke_id=poke_id, **payload)
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
