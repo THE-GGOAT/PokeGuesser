@@ -234,6 +234,15 @@ def random_chart():
     img = stats_bar_png(data['stats'])
     return send_file(img, mimetype='image/png')
 
+@app.route("/pokemon/<int:poke_id>")
+def pokemon_proxy(poke_id):
+    # return the raw PokeAPI pokemon object or a curated subset
+    try:
+        res = requests.get(f"{API}/pokemon/{poke_id}", timeout=5)
+        res.raise_for_status()
+        return jsonify(res.json())
+    except requests.RequestException:
+        return jsonify({"error":"failed"}), 502
 @app.route("/", methods=['GET', 'POST'])
 def index():
     poke_id = session.get("poke_id")

@@ -62,7 +62,96 @@
         </div>
       </div>
 
-     
+     <!-- Insert this below the name input group inside the form -->
+<div id="guessResult" class="d-flex align-items-start mt-3" style="display:none;">
+  <div id="spriteBox" class="me-3">
+    <img id="pokeSprite" src="" alt="" />
+  </div>
+  <div id="infoBoxes" class="d-flex flex-wrap gap-2" role="list" aria-label="Guess feedback">
+    <!-- Boxes will be injected here by JS -->
+  </div>
+</div>
+
+<style>
+  /* Sprite box */
+  #spriteBox {
+    width: 96px;
+    height: 96px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:transparent;
+  }
+  #spriteBox img {
+    max-width:100%;
+    max-height:100%;
+    display:block;
+  }
+
+  /* Info boxes container */
+  #infoBoxes {
+    flex:1;
+    display:flex;
+    gap:8px;
+    align-items:stretch;
+    flex-wrap:nowrap;
+    overflow:auto;
+  }
+
+  /* Each info box */
+  .info-box {
+    min-width:120px;
+    height:96px;
+    padding:8px;
+    box-sizing:border-box;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:flex-start;
+    background:#fff;
+    border-radius:6px;
+    text-transform:none;
+  }
+
+  /* First box (sprite label) has no outline */
+  .info-box.first {
+    border:0;
+    box-shadow:none;
+  }
+
+  /* Other boxes have thin black outline */
+  .info-box.outlined {
+    border:1px solid #000;
+  }
+
+  .info-box .label {
+    font-size:12px;
+    color:#333;
+    margin-bottom:6px;
+    font-weight:600;
+  }
+
+  .info-box .value {
+    font-size:16px;
+    color:#111;
+    font-weight:700;
+  }
+
+  /* Color states for type/gen match */
+  .match-true { background:#d4f7d4; } /* greenish */
+  .match-false { background:#f7d4d4; } /* reddish */
+
+  /* Generation arrow */
+  .gen-arrow {
+    font-size:18px;
+    margin-left:6px;
+    opacity:0.9;
+  }
+
+  /* Make horizontal scroll visible on small screens */
+  #infoBoxes::-webkit-scrollbar { height:8px; }
+  #infoBoxes::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius:4px; }
+</style>
 
       <div class="mb-3">
         <button id="submitBtn" type="submit" class="btn btn-primary" disabled>Submit Guess</button>
@@ -394,6 +483,182 @@
   }, true);
     const form = document.getElementById('itemForm');
 form.addEventListener('submit', async (e) => {
+// Utility: map generation name to numeric generation for comparison
+const generationMap = {
+  'generation-i': 1,
+  'generation-ii': 2,
+  'generation-iii': 3,
+  'generation-iv': 4,
+  'generation-v': 5,
+  'generation-vi': 6,
+  'generation-vii': 7,
+  'generation-viii': 8,
+  'generation-ix': 9
+};
+
+// Render feedback boxes given the generatedPokemon (the target) and guessedPokemon (the user's guess)
+async function renderGuessFeedback(generatedPokemon, guessedPokemon) {
+  const result = document.getElementById('guessResult');
+  const spriteImg = document.getElementById('pokeSprite');
+  const boxes = document.getElementById('infoBoxes');
+
+  // show container
+  result.style.display = '';
+
+  // sprite: prefer official artwork then front_default
+  const spriteUrl = (guessedPokemon.sprites && (guessedPokemon.sprites.other?.['official-artwork']?.front_default || guessedPokemon.sprites.front_default)) || '';
+  spriteImg.src = spriteUrl;
+  spriteImg.alt = guessedPokemon.name ? `Sprite of ${guessedPokemon.name}` : 'Pokémon sprite';
+
+  // helper to create a box
+  function makeBox(label, value, opts = {}) {
+    const div = document.createElement('div');
+    div.className = 'info-box outlined';
+    if (opts.first) {
+      div.classList.remove('outlined');
+      div.classList.add('first');
+    }
+    if (opts.match === true) div.classList.add('match-true');
+    if (opts.match === false) div.classList.add('match-false');
+
+    const lab = document.createElement('div');
+    lab.className = 'label';
+    lab.textContent = label;
+
+    const val = document.createElement('div');
+    val.className = 'value';
+    val.innerHTML = value;
+
+    div.appendChild(lab);
+    div.appendChild(val);
+    return div;
+  }
+
+  // clear previous
+  boxes.innerHTML = '';
+
+  // 1) Sprite label box (first, no outline)
+  const firstBox = makeBox('Sprite', '', { first: true });
+  boxes.appendChild(firstBox);
+
+  // 2) Generation box
+  const genA = generatedPokemon.generation || '';
+  const genB = guessedPokemon.generation || '';
+  const genANum = generationMap[genA] || null;
+  const genBNum = generationMap[genB] || null;
+
+  let genMatch = false;
+  let genContent = genB ? `Gen ${genBNum || genB.replace('generation-', '')}` : 'Unknown';
+  if (genANum && genBNum) {
+    genMatch = genANum === genBNum;
+    if (!genMatch) {
+      const arrow = genANum > genBNum ? '→' : '←';
+      const direction = genANum > genBNum ? 'after' : 'before';
+      genContent = `${genContent} <span class="gen-arrow" aria-hidden="true">${arrow}</span>`;
+    }
+  }
+  boxes.appendChild(makeBox('Generation', genContent, { match: genMatch }));
+
+  // 3) Type 1 and Type 2 boxes
+  const genTypes = generatedPokemon.types || [];
+  const guessTypes = guessedPokemon.types || [];
+
+  const genType1 = genTypes[0] || '';
+  const genType2 = genTypes[1] || '';
+  const guessType1 = guessTypes[0] || '';
+  const guessType2 = guessTypes[1] || '';
+
+  // Type 1 match logic: green if guess type1 equals generated type1
+  const type1Match = guessType1 && genType1 && guessType1.toLowerCase() === genType1.toLowerCase();
+  boxes.appendChild(makeBox('Type 1', guessType1 || '—', { match: !!type1Match }));
+
+  // Type 2 match logic: green if guess type2 equals generated type2; red if guess has type2 but doesn't match
+  let type2Match = null;
+  if (!guessType2) {
+    type2Match = null;
+  } else {
+    type2Match = genType2 && guessType2.toLowerCase() === genType2.toLowerCase();
+  }
+  boxes.appendChild(makeBox('Type 2', guessType2 || '—', { match: type2Match }));
+
+  // 4) Ability
+  const guessAbility = (guessedPokemon.abilities && guessedPokemon.abilities[0] && guessedPokemon.abilities[0].name) || '—';
+  boxes.appendChild(makeBox('Ability', guessAbility));
+
+  // 5) Height and Weight
+  const height = guessedPokemon.height != null ? guessedPokemon.height : '—';
+  const weight = guessedPokemon.weight != null ? guessedPokemon.weight : '—';
+  boxes.appendChild(makeBox('Height', String(height)));
+  boxes.appendChild(makeBox('Weight', String(weight)));
+
+  // ensure focus remains sensible for screen readers
+  boxes.setAttribute('tabindex', '-1');
+  boxes.focus();
+}
+
+// Helper: fetch full pokemon data by id from server or PokeAPI
+async function fetchPokemonById(id) {
+  try {
+    // prefer server endpoint if available
+    const resp = await fetch(`/pokemon/${id}`);
+    if (resp.ok) return await resp.json();
+  } catch (e) {
+    // fallback to PokeAPI
+  }
+  const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+  if (!res.ok) throw new Error('Failed to fetch pokemon');
+  return await res.json();
+}
+
+// Hook into your existing form submit handler where you already POST to '/'
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = nameInput.value.trim();
+  if (!name) return;
+
+  // existing AJAX POST to server
+  const fd = new FormData();
+  fd.append('name', name);
+
+  try {
+    const resp = await fetch('/', { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } });
+    if (!resp.ok) {
+      setMessage('Server error. Try again.', 'danger');
+      return;
+    }
+    const json = await resp.json();
+    if (!json.ok) {
+      setMessage('Server error. Try again.', 'danger');
+      return;
+    }
+    if (!json.exists) {
+      setMessage('Pokémon not found.', 'warning');
+      return;
+    }
+
+    // fetch both generated (target) and guessed full data
+    const generatedId = json.actual_id;
+    const guessedId = json.guessed_id;
+
+    const [generatedPokemon, guessedPokemon] = await Promise.all([
+      fetchPokemonById(generatedId),
+      fetchPokemonById(guessedId)
+    ]);
+
+    // normalize generation field: server's fetch_pokemon should include generation name
+    // render feedback boxes using guessedPokemon for displayed values and generatedPokemon for comparisons
+    await renderGuessFeedback(generatedPokemon, guessedPokemon);
+
+    // show match message
+    if (json.match) {
+      setMessage('Correct! You guessed the Pokémon.', 'success');
+    } else {
+      setMessage('Incorrect guess. Try again.', 'danger');
+    }
+  } catch (err) {
+    setMessage('Network error. Please try again.', 'danger');
+  }
+});
   e.preventDefault();
   const name = nameInput.value.trim();
   if (!name) return;
