@@ -150,8 +150,7 @@
       submitBtn.disabled = true;
       return;
     }
-    // initial validation on load
-     updateSubmitState();
+
     // required fields must be filled and pokemon must exist
     if (!requiredFieldsFilled()) {
       submitBtn.disabled = true;
@@ -226,7 +225,7 @@
       pokemonExists = false;
       checking = false;
       showSpinner(false);
-      setMessage('Network error. Please check your connection and try again.', 'danger');
+      
       updateSubmitState();
     }
   }
@@ -393,30 +392,7 @@
       suggestionsBox.style.top = rect.bottom + window.scrollY + 'px';
     }
   }, true);
-
-})();
-
-  
-
-  // prevent form submission if disabled (extra safety)
-  document.getElementById('itemForm').addEventListener('submit', function (e) {
-    if (submitBtn.disabled) {
-      e.preventDefault();
-      setMessage('Cannot submit: fix the issues above before submitting.', 'danger');
-      return;
-    }
-    // otherwise allow normal submit (or you can handle via AJAX here)
-  });
-
-  // accessibility: hide spinner from screen readers when not visible
-  const observer = new MutationObserver(() => {
-    nameSpinner.setAttribute('aria-hidden', nameSpinner.style.display === 'none' ? 'true' : 'false');
-  });
-  observer.observe(nameSpinner, { attributes: true, attributeFilter: ['style'] });
-
-  const form = document.getElementById('itemForm');
-const nameInput = document.getElementById('name');
-
+    const form = document.getElementById('itemForm');
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = nameInput.value.trim();
@@ -457,6 +433,27 @@ form.addEventListener('submit', async (e) => {
     setMessage('Network error. Please try again.', 'danger');
   }
   });
+})();
+
+  
+
+  // prevent form submission if disabled (extra safety)
+  document.getElementById('itemForm').addEventListener('submit', function (e) {
+    if (submitBtn.disabled) {
+      e.preventDefault();
+      
+      return;
+    }
+    // otherwise allow normal submit (or you can handle via AJAX here)
+  });
+
+  // accessibility: hide spinner from screen readers when not visible
+  const observer = new MutationObserver(() => {
+    nameSpinner.setAttribute('aria-hidden', nameSpinner.style.display === 'none' ? 'true' : 'false');
+  });
+  observer.observe(nameSpinner, { attributes: true, attributeFilter: ['style'] });
+
+
 
 </script>
 
