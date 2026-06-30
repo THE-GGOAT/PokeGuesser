@@ -482,9 +482,8 @@
     }
   }, true);
     const form = document.getElementById('itemForm');
-form.addEventListener('submit', async (e) => {
-// Utility: map generation name to numeric generation for comparison
-const generationMap = {
+
+  const generationMap = {
   'generation-i': 1,
   'generation-ii': 2,
   'generation-iii': 3,
@@ -496,44 +495,42 @@ const generationMap = {
   'generation-ix': 9
 };
 
-// Render feedback boxes given the generatedPokemon (the target) and guessedPokemon (the user's guess)
+async function fetchPokemonById(id) {
+  const p = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then(r => r.json());
+  const s = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`).then(r => r.json());
+  p.generation = s.generation?.name || null;
+  return p;
+}
+
 async function renderGuessFeedback(generatedPokemon, guessedPokemon) {
-  const result = document.getElementById('guessResult');
-  const spriteImg = document.getElementById('pokeSprite');
-  const boxes = document.getElementById('infoBoxes');
+  // your full render code here
+}
 
-  // show container
-  result.style.display = '';
 
-  // sprite: prefer official artwork then front_default
-  const spriteUrl = (guessedPokemon.sprites && (guessedPokemon.sprites.other?.['official-artwork']?.front_default || guessedPokemon.sprites.front_default)) || '';
-  spriteImg.src = spriteUrl;
-  spriteImg.alt = guessedPokemon.name ? `Sprite of ${guessedPokemon.name}` : 'Pokémon sprite';
+// THEN the submit handler — AFTER the helper functions
 
-  // helper to create a box
-  function makeBox(label, value, opts = {}) {
-    const div = document.createElement('div');
-    div.className = 'info-box outlined';
-    if (opts.first) {
-      div.classList.remove('outlined');
-      div.classList.add('first');
-    }
-    if (opts.match === true) div.classList.add('match-true');
-    if (opts.match === false) div.classList.add('match-false');
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-    const lab = document.createElement('div');
-    lab.className = 'label';
-    lab.textContent = label;
+  const name = nameInput.value.trim();
+  if (!name) return;
 
-    const val = document.createElement('div');
-    val.className = 'value';
-    val.innerHTML = value;
+  const fd = new FormData();
+  fd.append('name', name);
 
-    div.appendChild(lab);
-    div.appendChild(val);
-    return div;
-  }
+  const resp = await fetch('/', {
+    method: 'POST',
+    body: fd,
+    headers: { 'Accept': 'application/json' }
+  });
 
+  const json = await resp.json();
+
+  const generatedPokemon = await fetchPokemonById(json.actual_id);
+  const guessedPokemon = await fetchPokemonById(json.guessed_id);
+
+  await renderGuessFeedback(generatedPokemon, guessedPokemon);
+});
   // clear previous
   boxes.innerHTML = '';
 
