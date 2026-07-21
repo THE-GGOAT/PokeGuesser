@@ -591,7 +591,7 @@ form.addEventListener('submit', async (e) => {
   // ensure focus remains sensible for screen readers
   boxes.setAttribute('tabindex', '-1');
   boxes.focus();
-}
+})
 
 // Helper: fetch full pokemon data by id from server or PokeAPI
 async function fetchPokemonById(id) {
@@ -656,47 +656,6 @@ form.addEventListener('submit', async (e) => {
     setMessage('Network error. Please try again.', 'danger');
   }
 });
-  e.preventDefault();
-  const name = nameInput.value.trim();
-  if (!name) return;
-
-  const fd = new FormData();
-  fd.append('name', name);
-
-  try {
-    const resp = await fetch('/', {
-      method: 'POST',
-      body: fd,
-      headers: { 'Accept': 'application/json' }
-    });
-
-    if (!resp.ok) {
-      setMessage('Server error. Try again.', 'danger');
-      return;
-    }
-
-    const json = await resp.json();
-    if (!json.ok) {
-      setMessage('Server error. Try again.', 'danger');
-      return;
-    }
-
-    if (!json.exists) {
-      setMessage('Pokémon not found.', 'warning');
-      return;
-    }
-
-    if (json.match) {
-      setMessage('Correct! You guessed the Pokémon.', 'success');
-    } else {
-      setMessage('Incorrect guess. Try again.', 'danger');
-    }
-  } catch (err) {
-    setMessage('Network error. Please try again.', 'danger');
-  }
-  });
-})();
-
   
 
   // prevent form submission if disabled (extra safety)
