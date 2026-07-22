@@ -244,10 +244,9 @@ def pokemon_proxy(poke_id):
     except requests.RequestException:
         return jsonify({"error":"failed"}), 502
     
-@app.route("/", methods=['GET', 'POST'])
+@app.route("/")
 def index():
-    if request.method == 'GET':
-        return render_template("base.html")
+    return render_template("base.html")
     
 @app.route("/game", methods=['GET', 'POST'])
 def index():
