@@ -243,6 +243,7 @@ def pokemon_proxy(poke_id):
         return jsonify(res.json())
     except requests.RequestException:
         return jsonify({"error":"failed"}), 502
+    
 @app.route("/", methods=['GET', 'POST'])
 def index():
     poke_id = session.get("poke_id")

@@ -31,10 +31,7 @@ export function updateSubmitState() {
         return;
     }
 
-    if (!state.pokemonExists) {
-        submitBtn.disabled = true;
-        return;
-    }
+    
 
     submitBtn.disabled = false;
 }

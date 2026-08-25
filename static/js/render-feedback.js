@@ -66,8 +66,8 @@ export async function renderGuessFeedback(generatedPokemon, guessedPokemon) {
     boxes.appendChild(firstBox);
 
     // 2) Generation box
-    const genA = generatedPokemon.generation || '';
-    const genB = guessedPokemon.generation || '';
+    const genA = generatedPokemon.generation;
+    const genB = guessedPokemon.generation;
 
     const genANum = generationMap[genA] || null;
     const genBNum = generationMap[genB] || null;

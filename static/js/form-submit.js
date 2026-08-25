@@ -35,10 +35,7 @@ export function attachFormSubmitHandler() {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // extra safety: block submit if disabled
-        if (submitBtn.disabled) {
-            return;
-        }
+        
 
         const name = nameInput.value.trim();
         if (!name) return;
