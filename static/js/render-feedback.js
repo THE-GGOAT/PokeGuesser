@@ -61,9 +61,7 @@ export async function renderGuessFeedback(generatedPokemon, guessedPokemon) {
     // clear previous boxes
     boxes.innerHTML = '';
 
-    // 1) Sprite label box (first, no outline)
-    const firstBox = makeBox('Sprite', '', { first: true });
-    boxes.appendChild(firstBox);
+   
 
     // 2) Generation box
     const genA = generatedPokemon.generation;
