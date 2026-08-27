@@ -64,9 +64,33 @@ export async function renderGuessFeedback(generatedPokemon, guessedPokemon) {
    
 
     // 2) Generation box
+    export async function getPokemonGeneration(pokeId) {
+    try {
+        // 1. Fetch from your Flask proxy route
+        const response = await fetch(`/pokemon/${pokeId}`);
+        if (!response.ok) throw new Error('Failed to fetch pokemon');
+        
+        const pokemonData = await response.json();
+        
+        // 2. Fetch the species endpoint using the URL provided in pokemonData
+        const speciesResponse = await fetch(pokemonData.species.url);
+        const speciesData = await speciesResponse.json();
+        
+        // 3. Assign the generation name to a variable
+        const pokemonGeneration = speciesData.generation.name;
+        
+        return pokemonGeneration;
+    } catch (error) {
+        console.error('Error getting generation:', error);
+        return null;
+    }
+    }
+    console.log("")
+    
     const genA = generatedPokemon.generation;
     const genB = guessedPokemon.generation;
-
+    console.log("Generation A:", genA);
+    console.log("Generation B:", genB);
     const genANum = generationMap[genA] || null;
     const genBNum = generationMap[genB] || null;
 

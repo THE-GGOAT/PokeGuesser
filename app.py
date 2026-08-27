@@ -221,11 +221,7 @@ def ensure_poke_id():
     if "poke_id" not in session:
         session["poke_id"] = random.randint(1, 1010)
 
-@app.route("/random")
-def random_pokemon():
-    poke_id = session.get("poke_id")
-    data = fetch_pokemon(poke_id)
-    return jsonify(data)
+
 
 @app.route("/random/chart")
 def random_chart():
