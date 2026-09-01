@@ -62,15 +62,8 @@
         </div>
       </div>
 
-     <!-- Insert this below the name input group inside the form -->
-<div id="guessResult" class="d-flex align-items-start mt-3" style="display:none;">
-  <div id="spriteBox" class="me-3">
-    <img id="pokeSprite" src="" alt="" />
-  </div>
-  <div id="infoBoxes" class="d-flex flex-wrap gap-2" role="list" aria-label="Guess feedback">
-    <!-- Boxes will be injected here by JS -->
-  </div>
-</div>
+     
+<div id="guessHistory" class="guess-history"></div>
 
 <style>
   /* Sprite box */
@@ -151,6 +144,53 @@
   /* Make horizontal scroll visible on small screens */
   #infoBoxes::-webkit-scrollbar { height:8px; }
   #infoBoxes::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius:4px; }
+
+    #guessHistory {
+    width: 100%;
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 2px solid #333;
+    border-radius: 8px;
+    background: #1e1e1e;
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+
+  .guess-window {
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 2px solid #555;
+    border-radius: 8px;
+    background: #2a2a2a;
+  }
+
+  .guess-sprite {
+    width: 120px;
+    height: auto;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .sprite-label {
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #ccc;
+  }
+
+  .infoBoxes {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  #spriteBox img {
+    image-rendering: pixelated;
+}
+
+  
+
 </style>
 
       <div class="mb-3">

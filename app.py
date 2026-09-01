@@ -17,8 +17,10 @@ def generate_id():
         session["poke_id"] = random.randint(1, 1010) # adjust upper bound as needed
     return session["poke_id"]
 app.jinja_env.globals["poke_id"] = generate_id
-
+POKE_CACHE = {}
 def fetch_pokemon(poke_id):
+    if poke_id in POKE_CACHE:
+        return POKE_CACHE[poke_id]
     p = requests.get(f"{API}/pokemon/{poke_id}").json()
     s = requests.get(f"{API}/pokemon-species/{poke_id}").json()
     # stats: list of {stat: {name}, base_stat}
@@ -30,16 +32,34 @@ def fetch_pokemon(poke_id):
     } for a in p['abilities']]
     # species contains generation info
     generation = s.get('generation', {}).get('name')
+
+    generation_map = {
+        'generation-i': 1,
+        'generation-ii': 2,
+        'generation-iii': 3,
+        'generation-iv': 4,
+        'generation-v': 5,
+        'generation-vi': 6,
+        'generation-vii': 7,
+        'generation-viii': 8,
+        'generation-ix': 9
+    }
+
+    generation_int = generation_map.get(generation, None)
+
     data = {
         'id': p['id'],
         'name': p['name'],
         'generation': generation,
+        'generation_int': generation_int,
         'types': types,
         'height': p['height'],
         'weight': p['weight'],
         'abilities': abilities,
-        'stats': stats
+        'stats': stats,
+        'sprites' :p['sprites']
     }
+    POKE_CACHE[poke_id] = data
     return data
 
 CANONICAL_ORDER = ['hp','attack','defense','special-attack','special-defense', 'speed',]  
@@ -218,7 +238,7 @@ def resolve_name_to_id(name):
     
 @app.before_request
 def ensure_poke_id():
-    if "poke_id" not in session:
+    if "poke_id" not in session or session["poke_id"] is None:
         session["poke_id"] = random.randint(1, 1010)
 
 
@@ -234,11 +254,10 @@ def random_chart():
 def pokemon_proxy(poke_id):
     # return the raw PokeAPI pokemon object or a curated subset
     try:
-        res = requests.get(f"{API}/pokemon/{poke_id}", timeout=5)
-        res.raise_for_status()
-        return jsonify(res.json())
-    except requests.RequestException:
-        return jsonify({"error":"failed"}), 502
+        data = fetch_pokemon(poke_id)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": "failed", "details": str(e)}), 502
     
 @app.route("/", methods=['GET', 'POST'])
 def index():
@@ -259,7 +278,8 @@ def index():
             "actual_id": poke_id,
             "match": guessed_id == poke_id
         }
-
+        if guessed_id == poke_id:
+            session["poke_id"] = random.randint(1, 1010)
     # If client expects JSON (AJAX), return JSON; otherwise render template
     if request.headers.get("Accept") == "application/json" or request.is_json:
         return jsonify(payload)

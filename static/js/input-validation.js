@@ -8,7 +8,7 @@ export const state = {
 };
 
 // --- CONSTANTS ---
-const DEBOUNCE_MS = 1000;
+const DEBOUNCE_MS = 300;
 
 // --- EXPORT: show spinner ---
 export function showSpinner(show) {

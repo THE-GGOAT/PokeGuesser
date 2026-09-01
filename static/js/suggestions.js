@@ -4,6 +4,8 @@
 let cachedNames = null;
 let loadingNames = false;
 
+export { cachedNames };
+
 // --- DOM ELEMENT ---
 const suggestionsBox = document.createElement('div');
 suggestionsBox.id = 'nameSuggestions';
@@ -29,7 +31,7 @@ export async function loadAllPokemonNames() {
     loadingNames = true;
 
     try {
-        const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=100000');
+        const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=2000');
         if (!res.ok) {
             loadingNames = false;
             return;

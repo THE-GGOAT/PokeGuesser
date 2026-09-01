@@ -3,7 +3,7 @@
 
 // --- IMPORTS ---
 import { scheduleCheck, updateSubmitState, state } from './input-validation.js';
-import { loadAllPokemonNames, showSuggestionsFor, hideSuggestions } from './suggestions.js';
+import { loadAllPokemonNames, showSuggestionsFor, hideSuggestions, cachedNames } from './suggestions.js';
 import { attachFormSubmitHandler } from './form-submit.js';
 
 // --- DOM ELEMENTS ---
@@ -16,7 +16,7 @@ nameInput.addEventListener('input', async () => {
     state.pokemonExists = false;
 
     // load autocomplete names (non-blocking)
-    await loadAllPokemonNames();
+    if (!cachedNames) await loadAllPokemonNames();
 
     // schedule API existence check
     scheduleCheck();
@@ -34,9 +34,6 @@ nameInput.addEventListener('blur', () => {
 window.addEventListener('resize', () => {
     showSuggestionsFor(nameInput.value, nameInput);
 });
-window.addEventListener('scroll', () => {
-    showSuggestionsFor(nameInput.value, nameInput);
-}, true);
 
 // --- FORM SUBMISSION HANDLER ---
 attachFormSubmitHandler();

@@ -1,18 +1,3 @@
-// render-feedback.js
-
-// Generation name → number mapping
-const generationMap = {
-    'generation-i': 1,
-    'generation-ii': 2,
-    'generation-iii': 3,
-    'generation-iv': 4,
-    'generation-v': 5,
-    'generation-vi': 6,
-    'generation-vii': 7,
-    'generation-viii': 8,
-    'generation-ix': 9
-};
-
 // Helper: create a single info box
 function makeBox(label, value, opts = {}) {
     const div = document.createElement('div');
@@ -40,77 +25,60 @@ function makeBox(label, value, opts = {}) {
 
 // --- EXPORT: main render function ---
 export async function renderGuessFeedback(generatedPokemon, guessedPokemon) {
-    const result = document.getElementById('guessResult');
-    const spriteImg = document.getElementById('pokeSprite');
-    const boxes = document.getElementById('infoBoxes');
 
-    // show container
-    result.style.display = '';
+    if (!generatedPokemon || !guessedPokemon) {
+    console.error("Missing Pokémon data:", generatedPokemon, guessedPokemon);
+    return;
+}
+    // Instead of replacing the existing box list,
+    // we create a NEW mini-window for each guess.
+    const historyContainer = document.getElementById('guessHistory');
 
-    // sprite: official artwork → front_default → empty
-    const spriteUrl =
-        guessedPokemon.sprites?.other?.['official-artwork']?.front_default ||
+    // Create a wrapper window for this guess
+    const wrapper = document.createElement('div');
+    wrapper.className = 'guess-window';
+
+    // Sprite + name
+    const spriteImg = document.createElement('img');
+    spriteImg.className = 'guess-sprite';
+    spriteImg.src =
         guessedPokemon.sprites?.front_default ||
         '';
-
-    spriteImg.src = spriteUrl;
     spriteImg.alt = guessedPokemon.name
         ? `Sprite of ${guessedPokemon.name}`
         : 'Pokémon sprite';
 
-    // clear previous boxes
-    boxes.innerHTML = '';
+    const spriteLabel = document.createElement('div');
+    spriteLabel.className = 'sprite-label';
+    spriteLabel.textContent = `Sprite of ${guessedPokemon.name}`;
 
-   
+    wrapper.appendChild(spriteLabel);
+    wrapper.appendChild(spriteImg);
 
-    // 2) Generation box
-    export async function getPokemonGeneration(pokeId) {
-    try {
-        // 1. Fetch from your Flask proxy route
-        const response = await fetch(`/pokemon/${pokeId}`);
-        if (!response.ok) throw new Error('Failed to fetch pokemon');
-        
-        const pokemonData = await response.json();
-        
-        // 2. Fetch the species endpoint using the URL provided in pokemonData
-        const speciesResponse = await fetch(pokemonData.species.url);
-        const speciesData = await speciesResponse.json();
-        
-        // 3. Assign the generation name to a variable
-        const pokemonGeneration = speciesData.generation.name;
-        
-        return pokemonGeneration;
-    } catch (error) {
-        console.error('Error getting generation:', error);
-        return null;
-    }
-    }
-    console.log("")
-    
-    const genA = generatedPokemon.generation;
-    const genB = guessedPokemon.generation;
-    console.log("Generation A:", genA);
-    console.log("Generation B:", genB);
-    const genANum = generationMap[genA] || null;
-    const genBNum = generationMap[genB] || null;
+    // Box container for this guess
+    const boxes = document.createElement('div');
+    boxes.className = 'infoBoxes';
+    wrapper.appendChild(boxes);
+
+    // --- Generation ---
+    const genA = generatedPokemon.generation_int;
+    const genB = guessedPokemon.generation_int;
 
     let genMatch = false;
-    let genContent = genB
-        ? `Gen ${genBNum || genB.replace('generation-', '')}`
-        : 'Unknown';
+    let genContent = genB ? `Gen ${genB}` : 'Unknown';
 
-    if (genANum && genBNum) {
-        genMatch = genANum === genBNum;
+    if (genA && genB) {
+        genMatch = genA === genB;
 
         if (!genMatch) {
-            const arrow = genANum > genBNum ? '→' : '←';
+            const arrow = genA > genB ? '→' : '←';
             genContent = `${genContent} <span class="gen-arrow">${arrow}</span>`;
         }
     }
 
     boxes.appendChild(makeBox('Generation', genContent, { match: genMatch }));
 
-    // 3) Type 1 + Type 2 boxes
+    // --- Types ---
     const genTypes = generatedPokemon.types || [];
     const guessTypes = guessedPokemon.types || [];
 
@@ -135,20 +103,24 @@ export async function renderGuessFeedback(generatedPokemon, guessedPokemon) {
 
     boxes.appendChild(makeBox('Type 2', guessType2 || '—', { match: type2Match }));
 
-    // 4) Ability
-    const guessAbility =
-        guessedPokemon.abilities?.[0]?.name || '—';
-
+    // --- Ability ---
+    const guessAbility = guessedPokemon.abilities?.[0]?.name || '—';
     boxes.appendChild(makeBox('Ability', guessAbility));
 
-    // 5) Height + Weight
-    const height = guessedPokemon.height ?? '—';
-    const weight = guessedPokemon.weight ?? '—';
+
+    // --- Height + Weight ---
+    const heightMeters = guessedPokemon.height != null ? guessedPokemon.height / 10 : null;
+    const height = heightMeters ?? '—';
+
+    const weightKilograms = guessedPokemon.weight != null ? guessedPokemon.weight / 10 : null;
+    const weight = weightKilograms ?? '—';
 
     boxes.appendChild(makeBox('Height', String(height)));
     boxes.appendChild(makeBox('Weight', String(weight)));
 
-    // Accessibility: allow screen readers to focus the box list
-    boxes.setAttribute('tabindex', '-1');
-    boxes.focus();
+    // Add this guess window to the scrollable history
+    historyContainer.appendChild(wrapper);
+
+    // Scroll to bottom automatically
+    historyContainer.scrollTop = historyContainer.scrollHeight;
 }
