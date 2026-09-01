@@ -53,13 +53,21 @@ export async function renderGuessFeedback(generatedPokemon, guessedPokemon) {
     spriteLabel.textContent = `Sprite of ${guessedPokemon.name}`;
 
     wrapper.appendChild(spriteLabel);
-    wrapper.appendChild(spriteImg);
+    
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.flexDirection = 'row';
+    row.style.alignItems = 'center';
+    row.style.gap = '12px';
 
     // Box container for this guess
     const boxes = document.createElement('div');
     boxes.className = 'infoBoxes';
     wrapper.appendChild(boxes);
 
+    row.appendChild(spriteImg);
+    row.appendChild(boxes);
+    wrapper.appendChild(row);
     // --- Generation ---
     const genA = generatedPokemon.generation_int;
     const genB = guessedPokemon.generation_int;

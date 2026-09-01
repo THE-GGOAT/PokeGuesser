@@ -1,5 +1,7 @@
-import requests, random, io, json
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import requests, random, io, json
 from flask import Flask, render_template, send_file, jsonify, request, session
 import matplotlib.colors as mcolors
 import matplotlib.patches as patches
