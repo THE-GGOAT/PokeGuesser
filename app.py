@@ -19,6 +19,7 @@ def generate_id():
         session["poke_id"] = random.randint(1, 1010) # adjust upper bound as needed
     return session["poke_id"]
 app.jinja_env.globals["poke_id"] = generate_id
+
 POKE_CACHE = {}
 def fetch_pokemon(poke_id):
     if poke_id in POKE_CACHE:

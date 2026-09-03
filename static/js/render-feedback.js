@@ -100,6 +100,7 @@ export async function renderGuessFeedback(generatedPokemon, guessedPokemon) {
         genType1 &&
         guessType1.toLowerCase() === genType1.toLowerCase();
 
+
     boxes.appendChild(makeBox('Type 1', guessType1 || '—', { match: !!type1Match }));
 
     let type2Match = null;
@@ -111,7 +112,12 @@ export async function renderGuessFeedback(generatedPokemon, guessedPokemon) {
     boxes.appendChild(makeBox('Type 2', guessType2 || '—', { match: type2Match }));
 
     let type2match1 = null;
-    if (guessTy)
+    if (guessType2) {
+        type2match1 =
+            genType1 &&
+            guessType2.toLowerCase() === genType1.toLowerCase();
+    }
+    boxes.appendChild(makeBox('Type 2', guessType2 || '—', {match : type2Match1}))
 
     // --- Ability ---
     const genAbility = generatedPokemon.abilities?.[0]?.name || '—';
