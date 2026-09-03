@@ -24,7 +24,7 @@ export async function postGuess(name) {
     const fd = new FormData();
     fd.append('name', name);
 
-    const resp = await fetch('/', {
+    const resp = await fetch('/play', {
         method: 'POST',
         body: fd,
         headers: { 'Accept': 'application/json' }

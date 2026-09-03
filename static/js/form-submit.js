@@ -68,11 +68,15 @@ export function attachFormSubmitHandler() {
                 // Show popup
                 document.getElementById('correctPopup').style.display = 'flex';
 
-                // Play again button
+                document.getElementById('goHomeBtn').onclick = () => {
+                window.location.href = "/";
+                };
+
+                 // Play again button
                 document.getElementById('playAgainBtn').onclick = () => {
                     window.location.reload();
                 };
-
+                
                 return; // stop normal message
             } else {
                 setMessage('Incorrect guess. Try again.', 'danger');

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}PokeGuesser - Home{% endblock %}
+
+{% block head %}
+<style>
+.home-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;   /* vertical centering */
+    align-items: center;        /* horizontal centering */
+    min-height: 80vh;           /* take up most of the screen */
+    text-align: center;
+}
+
+.home-title {
+    font-size: 48px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.home-desc {
+    font-size: 20px;
+    margin-bottom: 40px;
+    color: #555;
+}
+
+.home-play-btn {
+    padding: 12px 28px;
+    font-size: 20px;
+}
+
+.play-wrapper {
+    margin-top: 100px;   /* move button independently */
+}
+
+.page-wrapper {
+    width: 100%;
+}
+.full-width {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="full-width">
+    <div class="home-container">
+        <h1 class="home-title">Guess the Pokémon!</h1>
+        <p class="home-desc">Try to identify the mystery Pokémon using clues.</p>
+
+        <div class="play-wrapper">
+            <a href="/play" class="btn btn-primary btn-lg home-play-btn">
+                Play Now
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

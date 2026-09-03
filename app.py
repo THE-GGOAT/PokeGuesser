@@ -12,7 +12,7 @@ import secrets
 
 
 API = "https://pokeapi.co/api/v2"
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 def generate_id():
     if "poke_id" not in session:
@@ -64,6 +64,41 @@ def fetch_pokemon(poke_id):
     }
     POKE_CACHE[poke_id] = data
     return data
+
+# --- FORM NORMALIZATION FOR VARIANTS ---
+FORM_MAP = {
+    # Meowth
+    "meowth-alola": "meowth",
+    "meowth-galar": "meowth",
+
+    # Wormadam
+    "wormadam-sandy": "wormadam",
+    "wormadam-trash": "wormadam",
+
+    # Basculin
+    "basculin-blue-striped": "basculin",
+    "basculin-white-striped": "basculin",
+
+    # Tauros (Paldea)
+    "tauros-paldea-combat": "tauros",
+    "tauros-paldea-blaze": "tauros",
+    "tauros-paldea-aqua": "tauros",
+
+    # Oricorio
+    "oricorio-pom-pom": "oricorio",
+    "oricorio-sensu": "oricorio",
+    "oricorio-pau": "oricorio",
+    "oricorio-baile": "oricorio",
+
+    # Lycanroc
+    "lycanroc-midday": "lycanroc",
+    "lycanroc-midnight": "lycanroc",
+    "lycanroc-dusk": "lycanroc",
+}
+
+def normalize_form(name):
+    name = name.lower().strip().replace(" ", "-")
+    return FORM_MAP.get(name, name)
 
 CANONICAL_ORDER = ['hp','attack','defense','special-attack','special-defense', 'speed',]  
 def stats_bar_png(
@@ -244,7 +279,9 @@ def ensure_poke_id():
     if "poke_id" not in session or session["poke_id"] is None:
         session["poke_id"] = random.randint(1, 1010)
 
-
+@app.route("/")
+def home():
+    return render_template("home.html")
 
 @app.route("/random/chart")
 def random_chart():
@@ -262,14 +299,14 @@ def pokemon_proxy(poke_id):
     except Exception as e:
         return jsonify({"error": "failed", "details": str(e)}), 502
     
-@app.route("/", methods=['GET', 'POST'])
+@app.route("/play", methods=['GET', 'POST'])
 def index():
     poke_id = session.get("poke_id")
     if request.method == 'GET':
         return render_template("index.html", poke_id=poke_id)
     
     #POST: authoritative check
-    name = request.form.get("name", "").strip()
+    name = normalize_form(request.form.get("name", "").strip())
     guessed_id = resolve_name_to_id(name)
     if guessed_id is None:
         payload = {"ok": True, "exists": False}
