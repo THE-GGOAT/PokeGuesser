@@ -9,6 +9,7 @@ function makeBox(label, value, opts = {}) {
     }
     if (opts.match === true) div.classList.add('match-true');
     if (opts.match === false) div.classList.add('match-false');
+    if (opts.match === 'wrong') div.classList.add('match-wrong');
 
     const lab = document.createElement('div');
     lab.className = 'label';
@@ -79,14 +80,14 @@ export async function renderGuessFeedback(generatedPokemon, guessedPokemon) {
         genMatch = genA === genB;
 
         if (!genMatch) {
-            const arrow = genA > genB ? '→' : '←';
+            const arrow = genA > genB ? '↑' : '↓';
             genContent = `${genContent} <span class="gen-arrow">${arrow}</span>`;
         }
     }
 
     boxes.appendChild(makeBox('Generation', genContent, { match: genMatch }));
 
-    // --- Types ---
+   // --- Types ---
     const genTypes = generatedPokemon.types || [];
     const guessTypes = guessedPokemon.types || [];
 
@@ -95,50 +96,97 @@ export async function renderGuessFeedback(generatedPokemon, guessedPokemon) {
     const guessType1 = guessTypes[0] || '';
     const guessType2 = guessTypes[1] || '';
 
-    const type1Match =
-        guessType1 &&
-        genType1 &&
-        guessType1.toLowerCase() === genType1.toLowerCase();
+    let type1Match = false;
+    let type2Match = false;
+    let type1WrongSlot = false;
+    let type2WrongSlot = false;
 
-
-    boxes.appendChild(makeBox('Type 1', guessType1 || '—', { match: !!type1Match }));
-
-    let type2Match = null;
-    if (guessType2) {
-        type2Match =
-            genType2 &&
-            guessType2.toLowerCase() === genType2.toLowerCase();
+    // Correct-slot matches
+    if (guessType1 && genType1 &&
+        guessType1.toLowerCase() === genType1.toLowerCase()) {
+        type1Match = true;
     }
-    boxes.appendChild(makeBox('Type 2', guessType2 || '—', { match: type2Match }));
 
-    let type2match1 = null;
-    if (guessType2) {
-        type2match1 =
-            genType1 &&
-            guessType2.toLowerCase() === genType1.toLowerCase();
+    if (guessType2 && genType2 &&
+        guessType2.toLowerCase() === genType2.toLowerCase()) {
+        type2Match = true;
     }
-    boxes.appendChild(makeBox('Type 2', guessType2 || '—', {match : type2Match1}))
 
+    // Wrong-slot matches (ORANGE)
+    if (!type1Match && guessType1 && genType2 &&
+        guessType1.toLowerCase() === genType2.toLowerCase()) {
+        type1WrongSlot = true;
+    }
+
+    if (!type2Match && guessType2 && genType1 &&
+        guessType2.toLowerCase() === genType1.toLowerCase()) {
+        type2WrongSlot = true;
+    }
+
+    // Append boxes
+    boxes.appendChild(makeBox(
+        'Type 1',
+        guessType1 || '—',
+        {
+            match: type1Match ? true : (type1WrongSlot ? 'wrong' : false)
+        }
+    ));
+
+    boxes.appendChild(makeBox(
+        'Type 2',
+        guessType2 || '—',
+        {
+            match: type2Match ? true : (type2WrongSlot ? 'wrong' : false)
+        }
+    ));
+
+  
     // --- Ability ---
     const genAbility = generatedPokemon.abilities?.[0]?.name || '—';
     const guessAbility = guessedPokemon.abilities?.[0]?.name || '—';
 
-    boxes.appendChild(makeBox('Ability', guessAbility));
+    const abilityMatch =
+        genAbility !== '—' &&
+        guessAbility !== '—' &&
+        genAbility.toLowerCase() === guessAbility.toLowerCase();
+
+    boxes.appendChild(makeBox(
+        'Ability',
+        guessAbility,
+        { match: abilityMatch ? true : null }   // <-- no red
+    ));
 
 
     // --- Height + Weight ---
-    const heightMeters = guessedPokemon.height != null ? guessedPokemon.height / 10 : null;
-    const height = heightMeters ?? '—';
+    const genHeight = generatedPokemon.height != null ? generatedPokemon.height / 10 : null;
+    const guessHeight = guessedPokemon.height != null ? guessedPokemon.height / 10 : null;
 
-    const weightKilograms = guessedPokemon.weight != null ? guessedPokemon.weight / 10 : null;
-    const weight = weightKilograms ?? '—';
+    let heightDisplay = guessHeight != null ? `${guessHeight}m` : '—';
 
-    boxes.appendChild(makeBox('Height', String(height)));
-    boxes.appendChild(makeBox('Weight', String(weight)));
+    if (genHeight != null && guessHeight != null) {
+        if (genHeight > guessHeight) {
+            heightDisplay += ' <span class="gen-arrow">↑</span>';
+        } else if (genHeight < guessHeight) {
+            heightDisplay += ' <span class="gen-arrow">↓</span>';
+        }
+    }
 
-    // Add this guess window to the scrollable history
-    historyContainer.appendChild(wrapper);
+    const genWeight = generatedPokemon.weight != null ? generatedPokemon.weight / 10 : null;
+    const guessWeight = guessedPokemon.weight != null ? guessedPokemon.weight / 10 : null;
 
-    // Scroll to bottom automatically
+    let weightDisplay = guessWeight != null ? `${guessWeight}kg` : '—';
+
+    if (genWeight != null && guessWeight != null) {
+        if (genWeight > guessWeight) {
+            weightDisplay += ' <span class="gen-arrow">↑</span>';
+        } else if (genWeight < guessWeight) {
+            weightDisplay += ' <span class="gen-arrow">↓</span>';
+        }
+    }
+
+        boxes.appendChild(makeBox('Height', heightDisplay));
+        boxes.appendChild(makeBox('Weight', weightDisplay));
+        historyContainer.appendChild(wrapper);
     historyContainer.scrollTop = historyContainer.scrollHeight;
+    
 }

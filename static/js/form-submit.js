@@ -65,7 +65,15 @@ export function attachFormSubmitHandler() {
 
             // show match message
             if (json.match) {
-                setMessage('Correct! You guessed the Pokémon.', 'success');
+                // Show popup
+                document.getElementById('correctPopup').style.display = 'flex';
+
+                // Play again button
+                document.getElementById('playAgainBtn').onclick = () => {
+                    window.location.reload();
+                };
+
+                return; // stop normal message
             } else {
                 setMessage('Incorrect guess. Try again.', 'danger');
             }

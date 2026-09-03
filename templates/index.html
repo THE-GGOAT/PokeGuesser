@@ -62,7 +62,12 @@
         </div>
       </div>
 
-     
+      <div id="correctPopup" class="correct-popup" style="display:none;">
+        <div class="popup-content">
+          <h2>Correct!</h2>
+          <button id="playAgainBtn" class="btn btn-primary">Play Again</button>
+        </div>
+      </div>
 <div id="guessHistory" class="guess-history"></div>
 
 <style>
@@ -185,11 +190,39 @@
     gap: 8px;
   }
 
+  .match-wrong {
+    background: #f7e3b4; /* soft orange */
+}
   #spriteBox img {
     image-rendering: pixelated;
 }
 
-  
+.correct-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+}
+
+.correct-popup .popup-content {
+  background: white;
+  padding: 30px 40px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+.correct-popup h2 {
+  margin-bottom: 20px;
+  font-size: 28px;
+  font-weight: bold;
+}  
 
 </style>
 
